@@ -1,5 +1,3 @@
-rebase('osnova.html')
-
 <form method="POST">
   <div class="control">
     <input class="input" type="text" placeholder="uporabniško ime" name="uporabnisko_ime">
@@ -12,8 +10,8 @@ rebase('osnova.html')
   </div>
 </form>
 
-<form method="POST">
-  <input type="hidden" name="nov_racun">
+<form method="POST" action="/prijava">
+  <input type="hidden" name="nov_racun" value="res_je">
   <div class="control">
     <input class="input" type="text" placeholder="uporabniško ime" name="uporabnisko_ime">
   </div>
@@ -21,6 +19,6 @@ rebase('osnova.html')
     <input class="input" type="password" placeholder="geslo" name="geslo">
   </div>
   <div class="control">
-    <input type="submit" class="button" value="registriraj se">
+    <input type="submit" class="button" value="Registriraj se">
   </div>
 </form>

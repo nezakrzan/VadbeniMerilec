@@ -41,7 +41,7 @@ def pogovor_z_uporabnikom():
                 vadba.izpisi_tek_meseci(mesec)
         
         if (moznost == 4):
-           x = int(input(
+            x = int(input(
                 "Kaj želiš: \n 1. Izpis vseh pohodov \n 2. Izpis pohodov po mesecih"
                 + "\n vpiši številko" ))
             if x == 1:

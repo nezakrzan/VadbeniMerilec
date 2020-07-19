@@ -1,19 +1,19 @@
 import bottle 
+from bottle import route, run, static_file, template
+
 import os
 import random
 import hashlib
+from datetime import datetime
 from model import *
 
-vadba = Vadba([], [], "tek.json", "pohod.json")
-vadba.nalozi_tek()
-vadba.nalozi_pohod()
 
-uporabnik = {}
+# Tukaj noter bodo shranjeni sessioni (torej kdo je uspesno prijavljen na strani)
+# Podatki so shranjeni kot {sessionID: razred Uporabniki}
+sessioni = {}
+
+# Skrivnost za kriptiranje podatkov v piskotih
 skrivnost = 'NEVIDNO'
-
-for ime_datoteke in os.listdir('uporabnik' ):
-    uporabnik = Uporabnik.nalozi_vadbe(os.path.join('uporabnik', ime_datoteke))
-    uporabnik[uporabnik.uporabnisko_ime] = uporabnik
 
 def poisci_tek(ime_polja):
     ime_tek = bottle.request.forms.getunicode(ime_polja)
@@ -25,11 +25,6 @@ def poisci_pohod(ime_polja):
     vadba = vadba_uporabnika()
     return vadba.poisci_pohod(ime_pohod)
 
-def trenutni_uporabnik():
-    uporabnisko_ime = bottle.request.get_cookie('uporabnisko_ime', secret=skrivnost)
-    if uporabnisko_ime is None:
-        bottle.redirect('/prijava/' )
-    return uporabniki[uporabnisko_ime]
 
 def vadba_uporabnika():
     return trenutni_uporabnik().vadba_uporabnika
@@ -38,11 +33,43 @@ def shrani_trenutnega_uporabnika():
     uporabnik = trenutni_uporabnik()
     uporabnik.shrani_vadbe(os.path.join('uporabnik', f'{uporabnik.uporabnisko_ime}.json' ))
 
-@bottle.get("/")
-def zacetna_stran():
-    bottle.redirect('/vadba/')
+def trenutni_uporabnik():
+    sessionID = bottle.request.get_cookie('sessionID', secret=skrivnost)
+    return sessioni.get(sessionID)
 
-@bottle.get('vadba')
+# Preveri, ce ima uporabnik shranjen sessionID ali ne
+def preveri_avtorizacijo():
+    # Ko je uporabnik prijavljen, je v programu shranjen njegov session
+    # ter njegovi podatki. Ce tega ni, uporabnik ni prijavljen in nima
+    # avtorizacije.
+    uporabnik = trenutni_uporabnik()
+    return uporabnik is not None
+
+# Pomozna funkcija, ki pomaga pri prijavi/registraciji uporabnika
+# tako, da shrani piskotke in nalozi/ustvari datoteko uporabnika
+def ustvari_sejo(sessionID, ime):
+    bottle.response.set_cookie('sessionID', sessionID, secret=skrivnost)
+
+    uporabnik = Uporabnik.nalozi(ime)
+    sessioni[sessionID]= uporabnik
+
+
+
+# ==============
+#     GET
+# ==============
+@bottle.route('/')
+def osnovna_stran(): 
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
+    
+    return bottle.template("views/osnova.html")
+
+@bottle.route('/prijava')
+def prijava_get():
+    return bottle.template('views/prijava.html' )
+
+@bottle.route('/vadba')
 def nacrtovanje_vadbe():
     vadba = vadba_uporabnika()
     return bottle.template('vadba.html', vadba=vadba)
@@ -51,34 +78,63 @@ def nacrtovanje_vadbe():
 def prijava_get():
     return bottle.template('prijava.html' )
 
-@bottle.post('/prijava/')
+# ==============
+#     POST
+# ==============
+@bottle.post('/prijava')
 def prijava_post():
-    uporabnisko_ime = bottle.request.forms.getunicode('uporabnisko_ime' )
-    geslo = bottle.request.forms.getunicode('geslo')
+    ime = bottle.request.forms.get('uporabnisko_ime')
+    geslo = bottle.request.forms.get('geslo')
+
+    # Zahasha geslo
     h = hashlib.blake2b()
     h.update(geslo.encode(encoding = 'utf-8'))
     skrito_geslo = h.hexdigest()
-    if 'nov_racun' in bottle.request.forms and uporabnisko_ime not in uporabnik:
+
+    # Ustvari sessionID - torej random hash glede 
+    # na trenutni cas (da je res skoz random)
+    cas = str(datetime.now())
+    h.update(cas.encode(encoding = 'utf-8')) 
+    sessionID = h.hexdigest()
+
+    # Preveri ce je prijava ali registracija
+    if bottle.request.forms.get('nov_racun') is not None and not Uporabnik.obstaja(ime): # Registracija
         uporabnik = Uporabnik(
-            uporabnisko_ime,
+            ime,
             skrito_geslo,
             Vadba()
         )
-        uporabniki[uporabnisko_ime] = uporabnik
-    else:
-        uporabnik = uporabniki[uporabnisko_ime]
-        uporabnik.preveri_geslo(skrito_geslo)
-    bpttle.response.set_copkie('uporabnisko_ime', uporabnik.uporabnisko_ime, path='/', secret=skrivnost)
+
+        uporabnik.shrani()
+        ustvari_sejo(sessionID, ime)
+    else: # Prijava
+        # Preveri ce uporabnik sploh obstaja
+        if Uporabnik.obstaja(ime): 
+            uporabnik = Uporabnik.nalozi(ime)
+
+            # Preveri geslo
+            if uporabnik.preveri_geslo(skrito_geslo): 
+                ustvari_sejo(sessionID, ime)
+
+
     bottle.redirect('/')
 
-@bottle.post('/odjava/')
+@bottle.post('/odjava')
 def odjava():
-    bottle.response.delete_cookie('uporabnisko_ime', path='/')
-    bottle.redirect('/')
+    # Uporabnik je ze odavljen
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
 
-@bottle.get('/')
-def osnovna_stran():
-    return bottle.template('osnovna.html')
+    sessionID = bottle.request.get_cookie('sessionID', secret=skrivnost)
+
+    # Shrani vse ustvarjene podatke o odjavljenem uporabniku
+    uporabnik = sessioni.pop(sessionID)
+    uporabnik.shrani()
+
+    bottle.response.delete_cookie('sessionID', path='/')
+
+
+    bottle.redirect('/')
 
 @bottle.post('/nov_tek')
 def nov_tek():
@@ -149,4 +205,6 @@ def vadba_mesec():
     mesec = bottle.request.forms.get('mesec')
     return str(vadba.izpis_vadba_mesec(mesec)) 
 
-bottle.run(debug=True, reloader=True)  
+# Server se zažene če je ta datoteka zagnana kot program
+if __name__ == '__main__':
+    bottle.run(debug=True, reloader=True)  
