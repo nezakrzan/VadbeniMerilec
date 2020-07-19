@@ -1,4 +1,5 @@
 import json
+from os import path
 
 
 meseci = ["januar", "februar", "marec", "april", "maj", "junij",
@@ -13,26 +14,38 @@ class Uporabnik:
         self.vadba = vadba
 
     def preveri_geslo(self, skrito_geslo):
-        if self.geslo != geslo:
-            raise ValueError('Napačno geslo!' )
+        return self.skrito_geslo == skrito_geslo 
 
-    def shrani_stanje(self, ime_datoteke):
+    def shrani(self):
+        ime_datoteke = path.join('uporabnik', f'{self.uporabnisko_ime}.json' )
+
         slovar_vadb = {
             'uporabnisko_ime': self.uporabnisko_ime,
             'geslo': self.skrito_geslo,
             'vadba': self.vadba.slovar_z_vadbami(),
         }
+
         with open(ime_datoteke, 'w') as datoteka:
             json.dump(slovar_vadb, datoteka, ensure_ascii=False, indent=4)
-    
+
     @classmethod
-    def nalozi_vadbe(cls, ime_datoteke):
+    def obstaja(cls, uporabnisko_ime):
+        ime_datoteke = path.join('uporabnik', f'{uporabnisko_ime}.json' )
+
+        return path.exists(ime_datoteke)
+
+    @classmethod
+    def nalozi(cls, uporabnisko_ime):
+        ime_datoteke = path.join('uporabnik', f'{uporabnisko_ime}.json' )
+
         with open(ime_datoteke) as datoteka:
-            slovar_vadb = json.load(datoteka)
-        uporabnisko_ime = slovar_vadb['uporabnisko_ime' ]
-        geslo = slovar_vadb['geslo' ]
-        vadba = Vadba.nalozi_iz_vadb(slovar_vadb['vadba' ])
-        return cls(uporabnisko_ime, geslo, vadba)
+            podatki = json.load(datoteka)
+            uporabnisko_ime = podatki['uporabnisko_ime']
+            geslo = podatki['geslo' ]
+            vadba = Vadba.nalozi_iz_vadb(podatki['vadba'])
+            return cls(uporabnisko_ime, geslo, vadba)
+        
+        return None
 
 
 class Tek:
@@ -68,8 +81,7 @@ class Pohod:
 
 
 class Vadba:
-
-    def _init__(self, seznam_tek, seznam_pohodi, datoteka_tek, datoteka_pohod):
+    def __init__(self, seznam_tek=[], seznam_pohodi=[], datoteka_tek="", datoteka_pohod=""):
         self.seznam_tek = seznam_tek
         self.seznam_pohodi = seznam_pohodi
         self.datoteka_tek = datoteka_tek
@@ -78,12 +90,12 @@ class Vadba:
         self.pohod_po_imenih = {}
     
     def nov_tek(self, tek):
-        if tek in self.tek_po_imenih:
+        if tek.ime in self.tek_po_imenih:
             raise ValueError('Tekaška vadba s tem imenom že obstaja!')
-        nov = Tek(tek, self)
-        self.seznam_tek.append(nov)
-        self.tek_po_imenih[tek] = nov
-        return nov
+
+
+        self.seznam_tek.append(tek)
+        self.tek_po_imenih[tek.ime] = tek 
     
     def izpisi_tek(self):
         prikaz = ""
@@ -125,15 +137,19 @@ class Vadba:
         with open(self.datoteka_tek, "w") as f:
             vsi_tek = []
             for tek in self.seznam_tek:
-                tek_dic = {"ime": tek.ime "čas": tek.cas, "razdalja": tek.razdalja, "mesec": tek.mesec}
+                tek_dic = {"ime": tek.ime, "čas": tek.cas, "razdalja": tek.razdalja, "mesec": tek.mesec}
                 vsi_tek.append(tek_dic)
             json.dump(vsi_tek, f)
     
     def nalozi_tek(self):
-        with open(self.datoteka_tek, "r") as f:
-            tek_dat = json.load(f)
-            for tek_dic in tek_dat:
-                self.seznam_tek.append(Tek(tek_dic["ime"], tek_dic["čas"], tek_dic["razdalja"], tek_dic["mesec"]))
+        # Preveri ce datoteka obstaja
+        if path.exists(self.datoteka_tek):
+            with open(self.datoteka_tek, "r") as f:
+                tek_dat = json.load(f)
+                for tek_dic in tek_dat:
+                    self.seznam_tek.append(Tek(tek_dic["ime"], tek_dic["čas"], tek_dic["razdalja"], tek_dic["mesec"]))
+
+            
     
     def zapisi_pohod(self):
         with open(self.datoteka_pohod, "w") as f:
@@ -144,10 +160,12 @@ class Vadba:
             json.dump(vsi_pohod, f)
     
     def nalozi_pohod(self):
-        with open(self.datoteka_pohod, "r") as f:
-            pohod_dat = json.load(f)
-            for pohod_dic in pohod_dat:
-                self.seznam_pohodi.append(Pohod(pohod_dic["ime"], pohod_dic["čas"], pohod_dic["višina"], pohod_dic["mesec"]))
+        # Preveri ce datoteka obstaja
+        if path.exists(self.datoteka_pohod):
+            with open(self.datoteka_pohod, "r") as f:
+                pohod_dat = json.load(f)
+                for pohod_dic in pohod_dat:
+                    self.seznam_pohodi.append(Pohod(pohod_dic["ime"], pohod_dic["čas"], pohod_dic["višina"], pohod_dic["mesec"]))
     
     def izpis_vadba(self):
         teki = 0
@@ -158,7 +176,7 @@ class Vadba:
             pohodi += int(pohod.ime)
         return teki + pohodi
 
-     def izpis_vadba_mesec(self, mesec):
+    def izpis_vadba_mesec(self, mesec):
         teki = 0
         pohodi = 0
         for tek in self.seznam_tek:
@@ -174,17 +192,17 @@ class Vadba:
             'tek': [{
                 'ime': tek.ime,
                 'datum': str(tek.datum)
-            } for tek in self.tek],
+            } for tek in self.seznam_tek],
             'pohod': [{
                 'ime': pohod.ime,
                 'datum': str(pohod.datum)
-            } for pohod in self.pohod],
+            } for pohod in self.seznam_pohodi],
         }
     
     @classmethod
     def nalozi_iz_vadb(cls, slovar_z_vadbami):
-        vadbe = cls()
-        for tek in slovar_z_vadbami['tek' ]:
+        vadba = cls()
+        for tek in slovar_z_vadbami['tek']:
             nov_tek = vadba.nov_tek(tek['ime' ])
         for pohod in slovar_z_vadbami['pohod' ]:
             nov_pohod = vadba.nov_pohod(pohod['ime' ])
@@ -195,7 +213,7 @@ class Vadba:
             json.dump(self.slovar_z_vadbami(), datoteka, ensure_ascii=False, indent=4)
     
     @classmethod
-    def nalozi_vadbe(cls, ime-datoteke):
+    def nalozi_vadbe(cls, ime_datoteke):
         with open(ime_datoteke) as datoteka:
             slovar_z_vadbami = json.load(datoteka)
         return cls.nalozi_iz_vadb(slovar_z_vadbami)

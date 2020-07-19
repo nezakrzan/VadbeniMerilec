@@ -71,12 +71,18 @@ def prijava_get():
 
 @bottle.route('/vadba')
 def nacrtovanje_vadbe():
-    vadba = vadba_uporabnika()
-    return bottle.template('vadba.html', vadba=vadba)
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
 
-@bottle.get('/prijava/' )
-def prijava_get():
-    return bottle.template('prijava.html' )
+    vadba = vadba_uporabnika()
+    return bottle.template('views/vadba.html', vadba=vadba)
+
+@bottle.route('/nov_tek')
+def nov_tek():
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
+
+    return bottle.template('vnost_teka.html')
 
 # ==============
 #     POST
@@ -137,21 +143,26 @@ def odjava():
     bottle.redirect('/')
 
 @bottle.post('/nov_tek')
-def nov_tek():
-    return bottle.template('vnost_teka.html')
+def nov_tek_post():
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
 
-@bottle.post('/nov_tek/nov')
-def pomozna1():
     ime = bottle.request.forms.get('ime')
     cas = bottle.request.forms.get('cas')
     razdalja = bottle.request.forms.get('razdalja')
     mesec = bottle.request.forms.get('mesec')
+
     tek = Tek(ime, cas, razdalja, mesec)
-    vadba.nov_tek(tek)
-    vadba.zapisi_tek()
+
+    # Shrani novo ustvarjeni tek v vadbo trenutnega uporabnika.
+    # Potem pa posodobi informacije uporabnika v datoteko
+    uporabnik = trenutni_uporabnik()
+    uporabnik.vadba.nov_tek(tek)
+    uporabnik.shrani()
+
     bottle.redirect('/')
 
- @bottle.post('/nov_pohod')
+@bottle.post('/nov_pohod')
 def nov_pohod():
     return bottle.template('vnost_pohoda.html')
 
