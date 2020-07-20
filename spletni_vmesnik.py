@@ -82,7 +82,14 @@ def nov_tek():
     if not preveri_avtorizacijo():
         bottle.redirect('/prijava')
 
-    return bottle.template('vnost_teka.html')
+    return bottle.template('vnos_teka.html')
+
+@bottle.route('/nov_pohod')
+def nov_pohod():
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
+
+    return bottle.template('vnos_pohoda.html')
 
 # ==============
 #     POST
@@ -162,19 +169,25 @@ def nov_tek_post():
 
     bottle.redirect('/')
 
-@bottle.post('/nov_pohod')
-def nov_pohod():
-    return bottle.template('vnost_pohoda.html')
 
-@bottle.post('/nov_pohod/nov')
-def pomozna1():
+@bottle.post('/nov_pohod')
+def nov_pohod_post():
+    if not preveri_avtorizacijo():
+        bottle.redirect('/prijava')
+
     ime = bottle.request.forms.get('ime')
     cas = bottle.request.forms.get('cas')
     visina = bottle.request.forms.get('visina')
     mesec = bottle.request.forms.get('mesec')
+
     pohod = Pohod(ime, cas, visina, mesec)
-    vadba.nov_pohod(pohod)
-    vadba.zapisi_pohod()
+
+    # Shrani novo ustvarjeni pohod v vadbo trenutnega uporabnika.
+    # Potem pa posodobi informacije uporabnika v datoteko
+    uporabnik = trenutni_uporabnik()
+    uporabnik.vadba.nov_pohod(pohod)
+    uporabnik.shrani()
+
     bottle.redirect('/')  
 
 @bottle.post('/izpisi_tek/') 
@@ -182,7 +195,7 @@ def izpisi_tek():
     return bottle.template('izpisi_tek.html')
 
 @bottle.post('/izpisi_tek/vsi_tek')
-def izpisi_tek():
+def izpisi_tek_vse():
     return vadba.izpisi_tek()
 
 @bottle.post('/izpisi_tek/izpisi_tek_mesec')
@@ -195,7 +208,7 @@ def izpisi_pohod():
     return bottle.template('izpisi_pohod.html')
 
 @bottle.post('/izpisi_pohod/vsi_tek')
-def izpisi_pohod():
+def izpisi_pohod_vse():
     return vadba.izpisi_pohod()
 
 @bottle.post('/izpisi_pohod/izpisi_tek_mesec')

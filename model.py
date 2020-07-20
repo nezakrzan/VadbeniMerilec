@@ -57,11 +57,10 @@ class Tek:
         self.mesec = mesec
 
     def __str__(self):
-        return "{}: {}, {}".format(self.ime, self.cas, self.razdalja, self.mesec)
+        return "{}: {}, {}, {}".format(self.ime, self.cas, self.razdalja, self.mesec)
     
     def __lt__(self, other):
         return (meseci.index(self.mesec) < meseci.index(other.mesec))
-
 
 
 class Pohod:
@@ -73,7 +72,7 @@ class Pohod:
         self.mesec = mesec
 
     def __str__(self):
-        return "{}: {}, {}".format(self.ime, self.cas, self.visina, self.mesec)
+        return "{}: {}, {}, {}".format(self.ime, self.cas, self.visina, self.mesec)
     
     def __lt__(self, other):
         return (meseci.index(self.mesec) < meseci.index(other.mesec))
@@ -93,7 +92,6 @@ class Vadba:
         if tek.ime in self.tek_po_imenih:
             raise ValueError('Tekaška vadba s tem imenom že obstaja!')
 
-
         self.seznam_tek.append(tek)
         self.tek_po_imenih[tek.ime] = tek 
     
@@ -112,12 +110,11 @@ class Vadba:
         return prikaz
     
     def nov_pohod(self, pohod):
-        if pohod in self.pohod_po_imenih:
+        if pohod.ime in self.pohod_po_imenih:
             raise ValueError('Pohod s tem imenom že obstaja!')
-        nov = Pohod(pohod, self)
-        self.seznam_pohodi.append(nov)
-        self.pohod_po_imenih[pohod] = nov
-        return nov
+
+        self.seznam_pohodi.append(pohod)
+        self.pohod_po_imenih[pohod.ime] = pohod
     
     def izpisi_pohod(self):
         prikaz = ""
@@ -189,27 +186,25 @@ class Vadba:
 
     def slovar_z_vadbami(self):
         return {
-            'tek': [{
-                'ime': tek.ime,
-                'datum': str(tek.datum)
-            } for tek in self.seznam_tek],
-            'pohod': [{
-                'ime': pohod.ime,
-                'datum': str(pohod.datum)
-            } for pohod in self.seznam_pohodi],
+            'tek': [tek.__dict__ for tek in self.seznam_tek],
+            'pohod': [pohod.__dict__ for pohod in self.seznam_pohodi],
         }
     
     @classmethod
     def nalozi_iz_vadb(cls, slovar_z_vadbami):
-        vadba = cls()
+        vadba = cls([],[],"","")
         for tek in slovar_z_vadbami['tek']:
-            nov_tek = vadba.nov_tek(tek['ime' ])
+            tek_objekt = Tek(tek['ime'], tek['cas'], tek['razdalja'], tek['mesec'])
+            vadba.nov_tek(tek_objekt)
+
         for pohod in slovar_z_vadbami['pohod' ]:
-            nov_pohod = vadba.nov_pohod(pohod['ime' ])
+            pohod_objekt = Pohod(pohod['ime'], pohod['cas'], pohod['visina'], pohod['mesec'])
+            vadba.nov_pohod(pohod_objekt)
+
         return vadba 
 
     def shrani_vadbe(self, ime_datoteke):
-        with open(ime_datoteke):
+        with open(ime_datoteke) as datoteka:
             json.dump(self.slovar_z_vadbami(), datoteka, ensure_ascii=False, indent=4)
     
     @classmethod
