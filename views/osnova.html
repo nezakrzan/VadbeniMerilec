@@ -1,28 +1,44 @@
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>Vadbeni merilec</title>
-    </head>
-    <body>
-    <center>
-        <h1>VADBENI MERILEC</h1>
-        <form action="/nov_tek" method="GET">
-            <input type="submit" value="Dodaj tekaško vadbo">
-        </form>
-        <form action="/nov_pohod" method="GET">
-            <input type="submit" value="Dodaj pohod">
-        </form>
-        <form action="/izpisi_tek" method="GET">
-            <input type="submit" value="Izpiši tekaške vadbe">
-        </form>
-        <form action="/izpisi_pohod" method="GET">
-            <input type="submit" value="Izpiši pohode">
-        </form>
-        <form action="/izpis_vadbe" method="GET">
-            <input type="submit" value="Izpiši vadbe">
-        </form>
-        <form action="/odjava" method="POST">
-            <input type="submit" value="Odjava">
-        </form>
-    </center>
+  <title>Vadbeni merilec</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+  <style>
+  body,h1,h5 {font-family: "Raleway", sans-serif}
+  body, html {height: 100%}
+  .bgimg {
+    min-height: 100%;
+    background-position: center;
+    background-size: cover;
+  }
+</style>
+    <body style="background-color:white;"></body>
+    <div class="bgimg w3-display-container w3-text-black">
+      <div class="w3-display-middle w3-jumbo">
+        <p>VADBENI MERILEC</p>
+        <p>Pozdravljeni! Zapišite si svojo vadbo.</p>
+      </div>
+      <div>
+        <p><form action="/nov_tek" method="GET">
+            <input type="submit" class="w3-button w3-black" value="Dodaj tekaško vadbo">
+        </form></p>
+        <p><form action="/nov_pohod" method="GET">
+            <input type="submit" class="w3-button w3-black" value="Dodaj pohod">
+        </form></p>
+        <p><form action="/izpisi_tek" method="GET">
+            <input type="submit" class="w3-button w3-black" value="Izpiši tekaške vadbe">
+        </form></p>
+        <p><form action="/izpisi_pohod" method="GET">
+            <input type="submit" class="w3-button w3-black" value="Izpiši pohode">
+        </form></p>
+        <p><form action="/izpis_vadbe" method="GET">
+            <input type="submit" class="w3-button w3-black" value="Izpiši vadbe">
+        </form></p>
+        <p><form action="/odjava" method="POST">
+            <input type="submit" class="w3-button w3-black" value="Odjava">
+        </form></p>
+      </div>
     </body>
 </html>

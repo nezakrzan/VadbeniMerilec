@@ -2,15 +2,16 @@
     <head>
         <title>Izpis</title>
     </head>
-    <body>
+    <body style="background-color:white;">
     <center>
     <center>
-    <h2> IZPIS TEKAŠKIH VADB </h2>
-        <form action="/izpisi_tek/vsi_stroski" method="POST">
-            <input type="submit" value="Izpisi vse stroske">
-        </form>
-        <form action="/izpisi_tek/izpisi_tek_mesec" method="POST">
-            Izpiši tekaške vadbe za mesec <input type="text" name="mesec">
+        <div class="w3-modal">
+            <div class="w3-container w3-black">
+              <h2> IZPIS TEKAŠKIH VADB </h2>
+            </div>
+            <div class="w3-container">
+        <form action="/izpisi_tek/vsi_tek" method="POST">
+            <input type="submit" value="Izpiši vse tekaške vadbe">
         </form>
     </center>
     </center>

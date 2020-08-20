@@ -2,16 +2,21 @@
     <head>
         <title>Dodaj_tek</title>
     </head>
-    <body>
+    <body style="background-color:white;">
     <center>
-    <h2> VNOS TEKAŠKE VADBE </h2>
-        <form action="/nov_tek" method="POST">
-            ime: <input type="text" name="ime"> <br>
-            cas: <input type="text" name="cas"> <br>
-            razdalja: <input type="text" name="razdalja"> <br>
-            mesec: <input type="text" name="mesec"> <br>
-            <input type="submit" value="dodaj">
+      <div class="w3-modal">
+        <div class="w3-container w3-black">
+          <h2> VNOS TEKAŠKE VADBE </h2>
+        </div>
+        <div class="w3-container">
+          <form action="/nov_tek" method="POST">
+            <p><input class="w3-input w3-padding-16 w3-border" type="text" placeholder="Ime" required name="Ime"></p>
+            <p><input class="w3-input w3-padding-16 w3-border" type="text" placeholder="Čas" required name="Čas"></p>
+            <p><input class="w3-input w3-padding-16 w3-border" type="text" placeholder="Razdalja" required name="Razdalja"></p>
+            <p><input class="w3-input w3-padding-16 w3-border" type="datetime-local" placeholder="Datum in ura" required name="Datum in ura" value="2020-23-7T 20:00"</p>
+            <p><input type="submit" value="dodaj"></p>
         </form>
+      </div>
     </center>
     </body>
 </html>
